@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
+  KeyboardAvoidingView,
 } from "react-native";
-import { SvgUri } from "react-native-svg";
 import { useState } from "react";
 
 const Start = ({ navigation }) => {
@@ -23,7 +23,6 @@ const Start = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* <View style={styles.subcontainer}> */}
 
       <ImageBackground source={image} resizeMode="cover" style={styles.image}>
         <Text style={styles.title}>App Title</Text>
@@ -46,7 +45,7 @@ const Start = ({ navigation }) => {
           </View>
 
           {/* Specific container for the colors */}
-          <View style={{ height: 100 }}>
+          <View style={{ height: 85, marginTop: 5, }}>
             {/* Need an outer box to have everything contained for justifyContent */}
             <Text style={styles.defaultText}>Choose a Background Color:</Text>
             <View style={styles.colorContainer}>
@@ -110,7 +109,10 @@ const Start = ({ navigation }) => {
           </Pressable>
         </View>
       </ImageBackground>
-      {/* </View> */}
+
+      {Platform.OS === "android" ? (
+        <KeyboardAvoidingView behavior="height" /> //prevents keyboard from hiding parts of the page 
+      ) : null}
     </View>
   );
 };
@@ -120,9 +122,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-evenly",
   },
-  subcontainer: {
-    width: "88%",
-    alignItems: "center",
+  title: {
+    marginTop: 100,
+    flex: 1,
+    fontSize: 45,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    alignSelf: "center",
   },
   settingsContainer: {
     flex: 1,
@@ -132,6 +138,7 @@ const styles = StyleSheet.create({
     width: "88%",
     alignSelf: "center",
     height: "44%",
+    minHeight: 170,
     marginBottom: 20,
   },
   colorContainer: {
@@ -139,7 +146,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "75%",
-    marginTop: 20,
+    marginTop: 10,
     height: 100,
   },
   border: {
@@ -170,14 +177,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "300",
     color: "#757083",
-  },
-  title: {
-    marginTop: 100,
-    flex: 1,
-    fontSize: 45,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    alignSelf: "center",
   },
   textContainer: {
     width: "100%",

@@ -9,17 +9,31 @@ import {
   Image,
   Pressable,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { useState } from "react";
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 const Start = ({ navigation }) => {
   //make a state for the user's name input
   const [name, setName] = useState("");
   const [color, setColor] = useState("");
-
   const image = require("../assets/Background-Image.png");
+  const onPress = (backgroundColor) => setColor(backgroundColor); //to set background color for chat
+  const auth = getAuth(); //sign in authorization
 
-  const onPress = (backgroundColor) => setColor(backgroundColor);
+  // Allow anonymous sign in
+  const signInUser = () => {
+    signInAnonymously(auth)
+      .then(result => {
+        //pass ID, name, and color to Chat.js
+        navigation.navigate("Chat", {userID: result.user.uid, name: name, color: color });
+        Alert.alert("Signed in Successfully!");
+      })
+      .catch((error) => {
+        Alert.alert("Unable to sign in, try later again.");
+      })
+  }
 
   return (
     <View style={styles.container}>
@@ -94,9 +108,11 @@ const Start = ({ navigation }) => {
 
           <Pressable
             style={styles.button}
-            onPress={() =>
-              navigation.navigate("Chat", { name: name, color: color })
-            }
+            //authenticates user and passes name and color to the Chat
+            //no need for navigation.navigate because its called in signInUser
+            onPress={() => { 
+              signInUser();
+            }}
           >
             <Text
               style={[

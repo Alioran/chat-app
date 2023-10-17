@@ -5,8 +5,10 @@ This chat app is a platform for both iOS and Android, and allow users to send me
 - React Native
 - Expo/Expo Go
 - Gifted Chat
+- Firestore/Firebase
 - Android Studio
 
 ## Updates
+- 10/17/23: Created a database with Firestore/Firebase to allow users to sign in anonymously and chat. Messages are stored on the database.
 - 10/12/23: Added Gifted Chat to the chat page and applied dummy messages as an example. 
 - 10/11/23: Created template using React Native and created 2 screens, the landing page screen where users can enter their username and color choice and second screen where the color and name carries over. No functionality for chatting yet.

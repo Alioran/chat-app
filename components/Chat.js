@@ -2,43 +2,62 @@ import { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
-  Text,
   KeyboardAvoidingView,
   LogBox,
 } from "react-native";
 LogBox.ignoreLogs(["AsyncStorage has been extracted from"]);
-import { Bubble, GiftedChat } from "react-native-gifted-chat";
-import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { Bubble, GiftedChat, InputToolbar } from "react-native-gifted-chat";
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+} from "firebase/firestore";
 
-const Chat = ({ db, route, navigation }) => {
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const Chat = ({ isConnected, db, route, navigation }) => {
   const { userID, name, color } = route.params;
   const [messages, setMessages] = useState([]);
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: name,
-      headerStyle: { backgroundColor: color },
-    }); //the navigation header's title is set to the name and color picked on previous screen
+useEffect(() => {
+  navigation.setOptions({
+    title: name,
+    headerStyle: { backgroundColor: color },
+  }); //the navigation header's title is set to the name and color picked on previous screen
+
+  let unsubMessages;
+  //if there is a connection, then load messages from the database
+  if (isConnected === true) {
+    // unregister current onSnapshot() listener to avoid registering multiple listeners when
+    // useEffect code is re-executed.
+    if (unsubMessages) unsubMessages();
+    unsubMessages = null;
 
     const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
     // onSnapshot listens to changes in Firestore collection
     // q is the query the argument listens to
     // documentSnapshot is a callback function to see if there are any changes that match the query
-    const unsubMessages = onSnapshot(q, (documentsSnapshot) => {
+    unsubMessages = onSnapshot(q, (documentsSnapshot) => {
       let newMessages = [];
-      documentsSnapshot.forEach(doc => {
+      documentsSnapshot.forEach((doc) => {
         const timestamp = doc.data().createdAt.toDate(); //convert the createdAt data to something Javascript can read
-        newMessages.push({ id: doc.id, ...doc.data(), createdAt: timestamp }) //push new message onto the doc, replace createdAt with new timestamp
+        newMessages.push({ id: doc.id, ...doc.data(), createdAt: timestamp }); //push new message onto the doc, replace createdAt with new timestamp
       });
+      //put any new messages into the database and the cache
+      cacheMessages(newMessages);
       setMessages(newMessages);
     });
+  } else loadCachedMessages(); //otherwise load the cached messages
 
-    // Clean up code
-    // this stops further updates (unsubs from Firestore listener)
-    return () => {
-      if (unsubMessages) unsubMessages();
-    }
-  }, []);
+  // Clean up code
+  // this stops further updates (unsubs from Firestore listener)
+  return () => {
+    if (unsubMessages) unsubMessages();
+  };
+}, [isConnected]); //run useEffect again whenever the connection changes
+
 
   //show the speech bubble and color them based on side
   const renderBubble = (props) => {
@@ -57,17 +76,40 @@ const Chat = ({ db, route, navigation }) => {
     );
   };
 
+  //prevent toolbar render if there is no connection
+  const renderInputToolbar = (props) => {
+    if (isConnected) return <InputToolbar {...props} />;
+    else return null;
+  };
+
   //add new messages to what was previously in messages
   const onSend = (newMessages) => {
     //add new messages as third argument for it to be the first to be the first item
-    addDoc(collection(db, "messages"), newMessages[0])
-  }
+    addDoc(collection(db, "messages"), newMessages[0]);
+  };
+
+  // load cached messages when offline
+  // data is stored as JSON strings so need to parse
+  const loadCachedMessages = async () => {
+    const cachedMessages = (await AsyncStorage.getItem("messages")) || [];
+    setMessages(JSON.parse(cachedMessages));
+  };
+
+  // cache messages for offline use
+  const cacheMessages = async (messagesToCache) => {
+    try {
+      await AsyncStorage.setItem("messages", JSON.stringify(messagesToCache));
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <GiftedChat
         messages={messages}
         renderBubble={renderBubble}
+        renderInputToolbar={renderInputToolbar}
         onSend={(messages) => onSend(messages)}
         user={{
           _id: userID,
@@ -75,7 +117,7 @@ const Chat = ({ db, route, navigation }) => {
         }}
       />
       {Platform.OS === "android" ? (
-        <KeyboardAvoidingView behavior="height" /> //prevents keyboard from hiding parts of the page 
+        <KeyboardAvoidingView behavior="height" /> //prevents keyboard from hiding parts of the page
       ) : null}
     </View>
   );

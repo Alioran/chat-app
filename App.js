@@ -11,20 +11,23 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, disableNetwork, enableNetwork } from "firebase/firestore";
 
 import { useNetInfo }from '@react-native-community/netinfo';
+import { getStorage } from "firebase/storage";
 
 const App = () => {
-
-  // Create the navigator
+// Create the navigator
 const Stack = createNativeStackNavigator();
 
 // Set up firestore/firebase 
 const firebaseConfig = {
+  //=================================
+  //Replace this code with your own if you replicating this project for yourself
   apiKey: "AIzaSyASFDDAl5yR0tKIOIUNiviNaPkHuonQXAY",
   authDomain: "chat-demo-a51ad.firebaseapp.com",
   projectId: "chat-demo-a51ad",
   storageBucket: "chat-demo-a51ad.appspot.com",
   messagingSenderId: "749210254465",
   appId: "1:749210254465:web:fd5a0f0f3d605f9d90e180"
+  //=================================
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app); //get database from firestore to pass into Chat
@@ -41,6 +44,7 @@ useEffect(() => {
   }
 }, [connectionStatus.isConnected]); //run useEffect when connection changes
 
+const storage = getStorage(app);
 
   return (
     <NavigationContainer>
@@ -54,7 +58,7 @@ useEffect(() => {
         <Stack.Screen
           name="Chat"
         >
-          {props => <Chat isConnected={connectionStatus.isConnected} db={db} {...props} />}
+          {props => <Chat isConnected={connectionStatus.isConnected} db={db} storage={storage} {...props} />}
           </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

@@ -16,16 +16,19 @@ import {
 } from "firebase/firestore";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
-const Chat = ({ isConnected, db, route, navigation }) => {
+const Chat = ({ isConnected, db, storage, route, navigation }) => {
   const { userID, name, color } = route.params;
   const [messages, setMessages] = useState([]);
 
 useEffect(() => {
+  //set the Chat header to have the name and color selected on Start
   navigation.setOptions({
     title: name,
     headerStyle: { backgroundColor: color },
-  }); //the navigation header's title is set to the name and color picked on previous screen
+  });
 
   let unsubMessages;
   //if there is a connection, then load messages from the database
@@ -59,7 +62,7 @@ useEffect(() => {
 }, [isConnected]); //run useEffect again whenever the connection changes
 
 
-  //show the speech bubble and color them based on side
+  // show the speech bubble and color them based on side
   const renderBubble = (props) => {
     return (
       <Bubble
@@ -76,11 +79,38 @@ useEffect(() => {
     );
   };
 
-  //prevent toolbar render if there is no connection
+  // prevent toolbar render if there is no connection
   const renderInputToolbar = (props) => {
     if (isConnected) return <InputToolbar {...props} />;
     else return null;
   };
+
+  // renders CustomActions.js
+  const renderCustomActions = (props) => {
+    return <CustomActions storage={storage} userID={userID} {...props} />;
+  };
+
+  // renders the map within the chat bubble
+  const renderCustomView = (props) => {
+    const { currentMessage} = props;
+    if (currentMessage.location) {
+      return (
+          <MapView
+            style={{width: 150,
+              height: 100,
+              borderRadius: 13,
+              margin: 3}}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+      );
+    }
+    return null;
+  }
 
   //add new messages to what was previously in messages
   const onSend = (newMessages) => {
@@ -110,7 +140,9 @@ useEffect(() => {
         messages={messages}
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
+        renderActions={renderCustomActions}
         onSend={(messages) => onSend(messages)}
+        renderCustomView={renderCustomView}
         user={{
           _id: userID,
           name: name,
